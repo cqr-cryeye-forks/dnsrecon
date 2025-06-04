@@ -210,12 +210,12 @@ def check_nxdomain_hijack(nameserver):
         try:
             answers = res.resolve(testname, record_type, tcp=True)
         except (
-            dns.resolver.NoNameservers,
-            dns.resolver.NXDOMAIN,
-            dns.exception.Timeout,
-            dns.resolver.NoAnswer,
-            socket.error,
-            dns.query.BadResponse,
+                dns.resolver.NoNameservers,
+                dns.resolver.NXDOMAIN,
+                dns.exception.Timeout,
+                dns.resolver.NoAnswer,
+                socket.error,
+                dns.query.BadResponse,
         ):
             continue
 
@@ -430,7 +430,7 @@ def brute_reverse(res, ip_list, verbose=False, thread_num=None):
     logger.info(f'Performing Reverse Lookup from {start_ip} to {end_ip}')
 
     ip_group_size = 255
-    for ip_group in [expanded_ips[j : j + ip_group_size] for j in range(0, len(expanded_ips), ip_group_size)]:
+    for ip_group in [expanded_ips[j: j + ip_group_size] for j in range(0, len(expanded_ips), ip_group_size)]:
         try:
             if verbose:
                 for ip in ip_group:
@@ -460,13 +460,13 @@ def brute_reverse(res, ip_list, verbose=False, thread_num=None):
 
 
 def brute_domain(
-    res,
-    dictfile,
-    dom,
-    filter_=None,
-    verbose=False,
-    ignore_wildcard=False,
-    thread_num=None,
+        res,
+        dictfile,
+        dom,
+        filter_=None,
+        verbose=False,
+        ignore_wildcard=False,
+        thread_num=None,
 ):
     """
     Main Function for domain brute forcing
@@ -665,7 +665,8 @@ def whois_ips(res, ip_list):
 
         if 'a' in answer:
             for i in range(len(list_whois)):
-                logger.info('Performing Reverse Lookup of range {0}-{1}'.format(list_whois[i]['start'], list_whois[i]['end']))
+                logger.info(
+                    'Performing Reverse Lookup of range {0}-{1}'.format(list_whois[i]['start'], list_whois[i]['end']))
                 found_records.append(brute_reverse(res, expand_range(list_whois[i]['start'], list_whois[i]['end'])))
 
         elif 'n' in answer:
@@ -674,7 +675,8 @@ def whois_ips(res, ip_list):
             for a in answer:
                 net_selected = list_whois[int(a)]
                 logger.info(net_selected['orgname'])
-                logger.info('Performing Reverse Lookup of range {0}-{1}'.format(net_selected['start'], net_selected['end']))
+                logger.info(
+                    'Performing Reverse Lookup of range {0}-{1}'.format(net_selected['start'], net_selected['end']))
                 found_records.append(brute_reverse(res, expand_range(net_selected['start'], net_selected['end'])))
     else:
         logger.error('No IP Ranges were found in the Whois query results')
@@ -732,17 +734,18 @@ def create_db(db):
     con = sqlite3.connect(db)
 
     # Create SQL Queries to be used in the script
-    make_table = """CREATE TABLE data (
-    serial integer  Primary Key Autoincrement,
-    domain TEXT(256),
-    type TEXT(8),
-    name TEXT(32),
-    address TEXT(32),
-    target TEXT(32),
-    port TEXT(8),
-    text TEXT(256),
-    zt_dns TEXT(32)
-    )"""
+    make_table = """CREATE TABLE data
+                    (
+                        serial  integer Primary Key Autoincrement,
+                        domain  TEXT(256),
+                        type    TEXT(8),
+                        name    TEXT(32),
+                        address TEXT(32),
+                        target  TEXT(32),
+                        port    TEXT(8),
+                        text    TEXT(256),
+                        zt_dns  TEXT(32)
+                    )"""
 
     # Set the cursor for connection
     con.isolation_level = None
@@ -817,13 +820,11 @@ def make_csv(data):
     return csv_data
 
 
-def write_json(jsonfile, data, scan_info):
+def write_json(jsonfile, data):
     """
     Function to write DNS Records SOA, PTR, NS, A, AAAA, MX, TXT, SPF and SRV to
-    JSON file.
+    JSON file without adding scan information.
     """
-    scaninfo = {'type': 'ScanInfo', 'arguments': scan_info[0], 'date': scan_info[1]}
-    data.insert(0, scaninfo)
     json_data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
     write_to_file(json_data, jsonfile)
 
@@ -843,26 +844,26 @@ def write_db(db, data):
     for n in data:
         if re.match(r'PTR|^[A]$|AAAA', n['type']):
             query = (
-                'insert into data( domain, type, name, address ) '
-                + 'values( "{domain}", "{type}", "{name}","{address}" )'.format(**n)
+                    'insert into data( domain, type, name, address ) '
+                    + 'values( "{domain}", "{type}", "{name}","{address}" )'.format(**n)
             )
 
         elif re.match(r'NS$', n['type']):
             query = (
-                'insert into data( domain, type, name, address ) '
-                + 'values( "{domain}", "{type}", "{target}", "{address}" )'.format(**n)
+                    'insert into data( domain, type, name, address ) '
+                    + 'values( "{domain}", "{type}", "{target}", "{address}" )'.format(**n)
             )
 
         elif re.match(r'SOA', n['type']):
             query = (
-                'insert into data( domain, type, name, address ) '
-                + 'values( "{domain}", "{type}", "{mname}", "{address}" )'.format(**n)
+                    'insert into data( domain, type, name, address ) '
+                    + 'values( "{domain}", "{type}", "{mname}", "{address}" )'.format(**n)
             )
 
         elif re.match(r'MX', n['type']):
             query = (
-                'insert into data( domain, type, name, address ) '
-                + 'values( "{domain}", "{type}", "{exchange}", "{address}" )'.format(**n)
+                    'insert into data( domain, type, name, address ) '
+                    + 'values( "{domain}", "{type}", "{exchange}", "{address}" )'.format(**n)
             )
 
         elif re.match(r'TXT', n['type']):
@@ -873,14 +874,14 @@ def write_db(db, data):
 
         elif re.match(r'SRV', n['type']):
             query = (
-                'insert into data( domain, type, name, target, address, port ) '
-                + 'values( "{domain}", "{type}", "{name}" , "{target}", "{address}" ,"{port}" )'.format(**n)
+                    'insert into data( domain, type, name, target, address, port ) '
+                    + 'values( "{domain}", "{type}", "{name}" , "{target}", "{address}" ,"{port}" )'.format(**n)
             )
 
         elif re.match(r'CNAME', n['type']):
             query = (
-                'insert into data( domain, type, name, target ) '
-                + 'values( "{domain}", "{type}", "{name}" , "{target}" )'.format(**n)
+                    'insert into data( domain, type, name, target ) '
+                    + 'values( "{domain}", "{type}", "{name}" , "{target}" )'.format(**n)
             )
 
         else:
@@ -889,7 +890,8 @@ def write_db(db, data):
             del n['type']
             record_data = ''.join([f'{key}={value},' for key, value in n.items()])
             records = [t, record_data]
-            query = 'insert into data(domain,type,text) values ("%(domain)", \'' + records[0] + "','" + records[1] + "')"
+            query = 'insert into data(domain,type,text) values ("%(domain)", \'' + records[0] + "','" + records[
+                1] + "')"
 
         # Execute Query and commit
         cur.execute(query)
@@ -929,9 +931,10 @@ def dns_sec_check(domain, res):
         logger.error(f'All nameservers failed to answer the DNSSEC query for {domain}')
     except dns.exception.Timeout:
         logger.error('A timeout error occurred please make sure you can reach the target DNS Servers')
-        logger.error(f'directly and requests are not being filtered. Increase the timeout from {res._res.timeout} second')
+        logger.error(
+            f'directly and requests are not being filtered. Increase the timeout from {res._res.timeout} second')
         logger.error('to a higher number with --lifetime <time> option.')
-        sys.exit(1)
+        # sys.exit(1)
     except dns.resolver.NoAnswer:
         logger.error(f'No answer for DNSSEC query for {domain}')
 
@@ -951,11 +954,11 @@ def check_bindversion(res, ns_server, timeout):
                 logger.info(f'\t Bind Version for {ns_server} {version}')
 
         except (
-            dns.resolver.NXDOMAIN,
-            dns.exception.Timeout,
-            dns.resolver.NoAnswer,
-            socket.error,
-            dns.query.BadResponse,
+                dns.resolver.NXDOMAIN,
+                dns.exception.Timeout,
+                dns.resolver.NoAnswer,
+                socket.error,
+                dns.query.BadResponse,
         ):
             pass
 
@@ -985,17 +988,17 @@ def check_recursive(res, ns_server, timeout):
 
 
 def general_enum(
-    res,
-    domain,
-    do_axfr,
-    do_bing,
-    do_yandex,
-    do_spf,
-    do_whois,
-    do_crt,
-    zw,
-    request_timeout,
-    thread_num=None,
+        res,
+        domain,
+        do_axfr,
+        do_bing,
+        do_yandex,
+        do_spf,
+        do_whois,
+        do_crt,
+        zw,
+        request_timeout,
+        thread_num=None,
 ):
     """
     Function for performing general enumeration of a domain. It gets SOA, NS, MX
@@ -1245,7 +1248,7 @@ def query_ds(res, target, ns, timeout=5.0):
         logger.error('A timeout error occurred please make sure you can reach the target DNS Servers')
         logger.error(f'directly and requests are not being filtered. Increase the timeout from {timeout} second')
         logger.error('to a higher number with --lifetime <time> option.')
-        sys.exit(1)
+        # sys.exit(1)
     except Exception:
         logger.error(f'Unexpected error: {sys.exc_info()[0]}')
         raise
@@ -1486,6 +1489,42 @@ def ds_zone_walk(res, domain, lifetime):
     return records
 
 
+def restructure_records(records):
+    grouped_records = {
+        "ns_servers": [],
+        "soa_records": [],
+        "srv_records": [],
+        "a_records": [],
+        "aaaa_records": [],
+        "mx_records": [],
+        "txt_records": [],
+        "spf_records": [],
+        "cname_records": []
+    }
+
+    for record in records:
+        if record["type"] == "NS":
+            grouped_records["ns_servers"].append(record)
+        elif record["type"] == "SOA":
+            grouped_records["soa_records"].append(record)
+        elif record["type"] == "SRV":
+            grouped_records["srv_records"].append(record)
+        elif record["type"] == "A":
+            grouped_records["a_records"].append(record)
+        elif record["type"] == "AAAA":
+            grouped_records["aaaa_records"].append(record)
+        elif record["type"] == "MX":
+            grouped_records["mx_records"].append(record)
+        elif record["type"] == "TXT":
+            grouped_records["txt_records"].append(record)
+        elif record["type"] == "SPF":
+            grouped_records["spf_records"].append(record)
+        elif record["type"] == "CNAME":
+            grouped_records["cname_records"].append(record)
+
+    return grouped_records
+
+
 def main():
     #
     # Option Variables
@@ -1627,7 +1666,8 @@ def main():
             action='store_true',
         )
         parser.add_argument(
-            '--disable_check_nxdomain', help='Disables check for NXDOMAIN hijacking on name servers.', action='store_true'
+            '--disable_check_nxdomain', help='Disables check for NXDOMAIN hijacking on name servers.',
+            action='store_true'
         )
         parser.add_argument(
             '--disable_check_recursion',
@@ -1844,7 +1884,7 @@ Possible types:
 
     # Initialize an empty list to hold all records
     all_returned_records = []
-
+    scan_info = None
     # Iterate over each domain and perform enumeration
     for domain in domain_list:
         logger.info(f'Starting enumeration for domain: {domain}')
@@ -1972,6 +2012,9 @@ Increase the timeout from {request_timeout} seconds to a higher number with --li
 
         logger.info(f'Completed enumeration for domain: {domain}\n')
 
+
+    all_records = restructure_records(all_returned_records)
+
     # After processing all domains, handle output
     if do_output:
         # XML Output
@@ -1994,6 +2037,6 @@ Increase the timeout from {request_timeout} seconds to a higher number with --li
         # JSON Output
         if json_file:
             logger.info(f'Saving records to JSON file: {json_file}')
-            write_json(json_file, all_returned_records, scan_info)
+            write_json(json_file, all_records)
 
     sys.exit(0)
