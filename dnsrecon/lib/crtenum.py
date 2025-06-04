@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 #    Copyright (C) 2010  Carlos Perez
 #
 #    This program is free software; you can redistribute it and/or modify
@@ -17,41 +14,40 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-from lxml import etree
-from lib.msf_print import *
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
-try:
-    from urllib import urlencode
-    from urllib2 import urlopen, Request, URLError, HTTPError
-except ImportError:
-    from urllib.request import urlopen, Request
-    from urllib.error import URLError, HTTPError
-    from urllib.parse import urlencode
+from loguru import logger
+from lxml import etree
+
+__name__ = 'crtenum'
 
 
 def scrape_crtsh(dom):
     """
-    Function for enumerating sub-domains by scraping crt.sh.
+    Function for enumerating subdomains by scraping crt.sh.
     """
     results = []
-    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:31.0) Gecko/20100101 Firefox/31.0'}
-    url = 'https://crt.sh/?q=%25.{}'.format(dom)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.3'
+    }
+    url = f'https://crt.sh/?q=%25.{dom}'
 
     req = Request(url=url, headers=headers)
     try:
-        resp = urlopen(req)
+        resp = urlopen(req, timeout=30)
         data = resp.read()
-    except URLError as e:
-        print_error('Connection with crt.sh failed. Reason: "{}"'.format(e.reason))
-        return results
     except HTTPError as e:
-        print_error('Bad http status from crt.sh: "{}"'.format(e.code))
+        logger.error(f'Bad http status from crt.sh: "{e.code}"')
+        return results
+    except URLError as e:
+        logger.error(f'Connection with crt.sh failed. Reason: "{e.reason}"')
         return results
 
     root = etree.HTML(data)
     tbl = root.xpath('//table/tr/td/table/tr/td[5]')
     if len(tbl) < 1:
-        print_error('Certificates for subdomains not found')
+        logger.error('Certificates for subdomains not found')
         return results
 
     for ent in tbl:
@@ -59,7 +55,7 @@ def scrape_crtsh(dom):
         if not sub_dom.endswith('.' + dom):
             continue
         if sub_dom.startswith('*.'):
-            print_status("\t {} wildcard".format(sub_dom))
+            logger.info(f'\t {sub_dom} wildcard')
             continue
         if sub_dom not in results:
             results.append(sub_dom)
